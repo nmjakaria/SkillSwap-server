@@ -11,6 +11,7 @@ const frontendUrl = required("FRONTEND_URL");
 export const env = {
   port: process.env.PORT || 4000,
   mongodbUri: required("MONGODB_URI"),
+  mongodbDbName: required("MONGODB_DB_NAME"),
   geminiApiKey: required("GEMINI_API_KEY"),
   frontendUrl,
   jwksUrl: `${frontendUrl}/api/auth/jwks`,

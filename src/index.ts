@@ -8,12 +8,20 @@ import skillsRoutes from "./routes/skills.routes";
 import aiRoutes from "./routes/ai.routes";
 import usersRoutes from "./routes/users.routes";
 import recommendationsRoutes from "./routes/recommendations.routes";
-
 const app = express();
 
 app.use(cors({ origin: env.frontendUrl, credentials: true }));
 app.use(express.json());
 
+// Database connection middleware for serverless compatibility
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
@@ -28,6 +36,11 @@ app.get('/', (req, res) => {
 
 app.use(errorHandler);
 
-connectDB().then(() => {
-  app.listen(env.port, () => console.log(`API running on port ${env.port}`));
-});
+// Only listen to port if not running in a serverless environment (like Vercel)
+if (!process.env.VERCEL) {
+  connectDB().then(() => {
+    app.listen(env.port, () => console.log(`API running on port ${env.port}`));
+  });
+}
+
+export default app;

@@ -18,6 +18,6 @@ export async function updateMe(req: Request, res: Response) {
     update.profileEmbedding = await createEmbedding(text);
   }
 
-  const user = await User.findByIdAndUpdate(req.userId, update, { new: true });
+  const user = await User.findByIdAndUpdate(req.userId, update, { returnDocument: "after" });
   res.json(user);
 }

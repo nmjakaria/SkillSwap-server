@@ -25,7 +25,7 @@ export async function listSkills(req: Request, res: Response) {
 }
 
 export async function getSkill(req: Request, res: Response) {
-  const skill = await Skill.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } }, { new: true });
+  const skill = await Skill.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } }, { returnDocument: "after" });
   if (!skill) return res.status(404).json({ error: "Skill not found" });
   res.json(skill);
 }

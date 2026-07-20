@@ -14,9 +14,6 @@ const app = express();
 app.use(cors({ origin: env.frontendUrl, credentials: true }));
 app.use(express.json());
 
-app.get('/', (req, res) => {
-    res.send('Server is running fine');
-});
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
@@ -24,6 +21,10 @@ app.use("/api/skills", skillsRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/recommendations", recommendationsRoutes);
+
+app.get('/', (req, res) => {
+    res.send('Server is running fine');
+});
 
 app.use(errorHandler);
 

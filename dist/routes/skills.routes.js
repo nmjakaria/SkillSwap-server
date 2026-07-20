@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_1 = require("../middleware/auth");
+const validate_1 = require("../middleware/validate");
+const skill_schema_1 = require("../schemas/skill.schema");
+const skills_controller_1 = require("../controllers/skills.controller");
+const router = (0, express_1.Router)();
+router.get("/", skills_controller_1.listSkills);
+router.get("/mine", auth_1.requireAuth, skills_controller_1.mySkills);
+router.get("/:id", skills_controller_1.getSkill);
+router.get("/:id/related", skills_controller_1.relatedSkills);
+router.post("/", auth_1.requireAuth, (0, validate_1.validate)(skill_schema_1.createSkillSchema), skills_controller_1.createSkill);
+router.delete("/:id", auth_1.requireAuth, skills_controller_1.deleteSkill);
+exports.default = router;

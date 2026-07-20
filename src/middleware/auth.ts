@@ -1,9 +1,22 @@
 import { Request, Response, NextFunction } from "express";
-import { createRemoteJWKSet, jwtVerify } from "jose";
 import { env } from "../config/env";
 import { User } from "../models/User";
 
-const JWKS = createRemoteJWKSet(new URL(env.jwksUrl));
+// jose is ESM-only; can't be require()'d from compiled CommonJS output.
+// Lazily import it, and cache both the module and the JWKS instance.
+let josePromise: Promise<typeof import("jose")> | null = null;
+function getJose() {
+  if (!josePromise) josePromise = import("jose");
+  return josePromise;
+}
+
+let jwksPromise: Promise<ReturnType<typeof import("jose").createRemoteJWKSet>> | null = null;
+async function getJWKS() {
+  if (!jwksPromise) {
+    jwksPromise = getJose().then((jose) => jose.createRemoteJWKSet(new URL(env.jwksUrl)));
+  }
+  return jwksPromise;
+}
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
@@ -13,6 +26,9 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     }
     const token = header.slice("Bearer ".length);
 
+    const { jwtVerify } = await getJose();
+    const JWKS = await getJWKS();
+
     const { payload } = await jwtVerify(token, JWKS, {
       issuer: env.jwtIssuer,
     });
@@ -20,8 +36,6 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     const authId = payload.sub;
     if (!authId) return res.status(401).json({ error: "Invalid token payload" });
 
-    // Find or lazily create the corresponding app-side User doc.
-    // (BetterAuth owns identity; this User doc holds app-specific fields like bio/interests/embedding.)
     let user = await User.findOne({ authId });
     if (!user) {
       user = await User.create({
@@ -30,7 +44,6 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
         email: (payload.email as string) || `${authId}@placeholder.local`,
       });
     }
-
     req.userId = user._id.toString();
     req.authId = authId as string;
     next();

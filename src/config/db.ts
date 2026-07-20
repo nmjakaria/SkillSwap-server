@@ -4,7 +4,7 @@ import { env } from "./env";
 export async function connectDB() {
   try {
     await mongoose.connect(env.mongodbUri, { dbName: env.mongodbDbName });
-    console.log("MongoDB connected");
+    // console.log("MongoDB connected");
   } catch (err) {
     console.error("MongoDB connection failed:", err);
     process.exit(1);

@@ -1,24 +1,23 @@
 import { Request, Response, NextFunction } from "express";
 import { env } from "../config/env";
 import { User } from "../models/User";
+import { createRemoteJWKSet, jwtVerify } from "jose-cjs";
 
-// jose is ESM-only; can't be require()'d from compiled CommonJS output.
-// Lazily import it, and cache both the module and the JWKS instance.
-let josePromise: Promise<typeof import("jose")> | null = null;
-function getJose() {
-  if (!josePromise) josePromise = import("jose");
-  return josePromise;
-}
+let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
 
-let jwksPromise: Promise<ReturnType<typeof import("jose").createRemoteJWKSet>> | null = null;
-async function getJWKS() {
-  if (!jwksPromise) {
-    jwksPromise = getJose().then((jose) => jose.createRemoteJWKSet(new URL(env.jwksUrl)));
-  }
-  return jwksPromise;
+function getJWKS() {
+    if (!jwks) {
+        const authUrl = env.frontendUrl;
+        if (!authUrl) {
+            throw new Error('BETTER_AUTH_URL is not defined in .env');
+        }
+        jwks = createRemoteJWKSet(new URL(`${env.frontendUrl}/api/auth/jwks`));
+    }
+    return jwks;
 }
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
+  //  console.log("Authorization header received:", req.headers.authorization)
   try {
     const header = req.headers.authorization;
     if (!header?.startsWith("Bearer ")) {
@@ -26,7 +25,6 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     }
     const token = header.split(' ')[1];
 
-    const { jwtVerify } = await getJose();
     const JWKS = await getJWKS();
 
     const { payload } = await jwtVerify(token, JWKS, {

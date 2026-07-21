@@ -1,3 +1,5 @@
+import dns from "node:dns"
+dns.setServers(["8.8.8.8", "8.8.4.4"])
 import express from "express";
 import cors from "cors";
 import { env } from "./config/env";
@@ -11,6 +13,7 @@ import recommendationsRoutes from "./routes/recommendations.routes";
 const app = express();
 
 app.use(cors({ origin: env.frontendUrl, credentials: true }));
+
 app.use(express.json());
 
 // Database connection middleware for serverless compatibility
@@ -43,4 +46,4 @@ if (!process.env.VERCEL) {
   });
 }
 
-export default app;
+export default app;
